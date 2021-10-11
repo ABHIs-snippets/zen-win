@@ -188,7 +188,7 @@
         fetch('http://api.zenwin.in/user/signup', {
           method: 'POST',
           headers: {
-            'Authorization': 'Bearer ' + result.user.token, // set token to header
+            'Authorization': 'Bearer ' + result.user._lat, // set token to header
           },
           body: JSON.stringify(user)
         }).then(handleFinalResponse).catch(console.log)
