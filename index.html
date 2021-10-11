@@ -70,7 +70,7 @@
     <form id="signup" class="p-3 d-none">
       <div class="form-group">
         <label>Mobile number</label>
-        <input type="number" id="readOnly" class="form-control text-white" readonly name="mobile"
+        <input type="tel" id="readOnly" class="form-control text-white" readonly name="mobile"
           placeholder="Enter phone number" />
       </div>
       <div class="form-group mt-2">
@@ -118,6 +118,16 @@
     // captcha
     var recaptcha = new firebase.auth.RecaptchaVerifier("recaptcha");
 
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+    "recaptcha",
+    {
+    size: "normal",
+    callback: function(response) {
+        auth();
+    }
+    }
+);
+
     //user obj
     user = {
       fullName: '',
@@ -128,28 +138,29 @@
 
     function auth() {
       user.mobile = "+91" + document.querySelector("#mobile").value;
+      var appVerifier = window.recaptchaVerifier;
       firebase
         .auth()
-        .signInWithPhoneNumber(user.mobile, recaptcha)
+        .signInWithPhoneNumber(user.mobile, appVerifier)
         .then(function (e) {
-          console.log(e)
+          window.confirmationResult = e;
           //form switch to otp
           showToast('OTP has sent to ' + user.mobile)
-          swtichToOtp(e.confirm)
+          swtichToOtp()
         })
         .catch(function (error) {
           console.error("error", error);
         });
     }
 
-    function swtichToOtp(confirm) {
+    function swtichToOtp() {
       document.getElementById('form').firstElementChild.classList.add('d-none')
       document.getElementById('form').firstElementChild.nextElementSibling.classList.remove('d-none')
       submitBtn.innerText = 'CONFIRM OTP'
       submitBtn.addEventListener('click', () => {
         var code = document.querySelector("#otp").value;
         if (code)
-          confirm(code).then(function (result) {
+        confirmationResult.confirm(code).then(function (result) {
             console.log("user", result.user);
             signupFormToggle(result);
           })
