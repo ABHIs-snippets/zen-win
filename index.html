@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css"
+    integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous" />
+  <style>
+    .logo {
+      width: 100%;
+      border-radius: 22px;
+      height: 135px;
+      object-fit: cover;
+      border: 4px solid #1d2a4f;
+      filter: drop-shadow(2px 4px 6px black);
+    }
+
+    .toastr {
+      position: absolute;
+      top: 12px;
+      transition: .3s ease all;
+      transform: translateY(-18px);
+      opacity: 0;
+    }
+
+    .toastr.success {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-msg {
+      background: #4976bd;
+      border-radius: 6px;
+      filter: drop-shadow(2px 4px 6px black);
+    }
+
+    input {
+      background-color: #3f5cac !important;
+      filter: drop-shadow(2px 4px 6px black);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toastr w-100 text-white">
+    <div class="toast-msg m-2 p-2">msg</div>
+  </div>
+  <div class="container text-white" style="background-color: #293b6b; min-height: 100vh">
+    <h2 class="text-center pt-5">Welcome</h2>
+    <div class="p-2">
+      <img class="logo" src="./images/logo.jpeg" alt="" />
+    </div>
+    <form id="form" class="p-3">
+      <div class="form-group">
+        <label for="mobile">Mobile number</label>
+        <input type="number" id="mobile" class="form-control text-white" name="mobile"
+          placeholder="Enter phone number" />
+      </div>
+      <div class="form-group d-none">
+        <label for="otp">Enter Otp</label>
+        <input type="number" id="otp" class="form-control text-white" name="otp" />
+      </div>
+      <div class="d-flex justify-content-center my-3" id="recaptcha"></div>
+      <button class="btn w-100 text-white" type="button" id="submitBtn"
+        style="filter: drop-shadow(2px 4px 6px black);border: 2px solid;">SEND OTP</button>
+    </form>
+    <form id="signup" class="p-3 d-none">
+      <div class="form-group">
+        <label>Mobile number</label>
+        <input type="number" id="readOnly" class="form-control text-white" readonly name="mobile"
+          placeholder="Enter phone number" />
+      </div>
+      <div class="form-group mt-2">
+        <label for="fullName">Full name</label>
+        <input type="text" id="fullName" class="form-control text-white" name="fullName"
+          placeholder="Enter your full name" />
+      </div>
+      <div class="form-group mt-2">
+        <label for="email">Email</label>
+        <input type="text" id="email" class="form-control text-white" name="email" placeholder="Enter your email" />
+      </div>
+      <button class="btn w-100 text-white mt-2" type="button" id="signupBtn"
+        style="filter: drop-shadow(2px 4px 6px black);border: 2px solid;">SIGN UP</button>
+
+    </form>
+
+
+    <div id="finalAction" class="d-none">
+      <button class="btn w-100 btn-primary" type="button"
+        style="filter: drop-shadow(2px 4px 6px black);border: 2px solid;">PLAY NOW</button>
+      <button class="btn w-100 btn-primary mt-2" type="button"
+        style="filter: drop-shadow(2px 4px 6px black);border: 2px solid;">DOWNLOAD APK</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/4.5.1/firebase.js"></script>
+  <script>
+    var config = {
+      apiKey: "AIzaSyDLXEho5i2s1nDhnGdOTmyGSi0TfIRMMD8",
+      authDomain: "zenwin-app.firebaseapp.com",
+      databaseURL: "https://zenwin-app-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "zenwin-app",
+      storageBucket: "zenwin-app.appspot.com",
+      messagingSenderId: "591444715828",
+      appId: "1:591444715828:web:afd033b7d0fbcba0b69d61",
+      measurementId: "G-6PVTW3TS4H"
+    };
+
+    firebase.initializeApp(config);
+
+    let submitBtn = document.getElementById('submitBtn');
+    submitBtn.addEventListener('click', auth);
+
+    // captcha
+    var recaptcha = new firebase.auth.RecaptchaVerifier("recaptcha");
+
+    //user obj
+    user = {
+      fullName: '',
+      mobile: '',
+      invitedBy: '',
+      email: ''
+    }
+
+    function auth() {
+      user.mobile = "+91" + document.querySelector("#mobile").value;
+      firebase
+        .auth()
+        .signInWithPhoneNumber(user.mobile, recaptcha)
+        .then(function (e) {
+          //form switch to otp
+          showToast('OTP has sent to ' + user.mobile)
+          swtichToOtp(e.confirm)
+        })
+        .catch(function (error) {
+          console.error("error", error);
+        });
+    }
+
+    function swtichToOtp(confirm) {
+      document.getElementById('form').firstElementChild.classList.add('d-none')
+      document.getElementById('form').firstElementChild.nextElementSibling.classList.remove('d-none')
+      submitBtn.innerText = 'CONFIRM OTP'
+      submitBtn.addEventListener('click', () => {
+        var code = document.querySelector("#otp").value;
+        if (code)
+          confirm(code).then(function (result) {
+            console.log("user", result.user);
+            signupFormToggle(result);
+          })
+            .catch(function (error) {
+              console.error("error", error);
+            });
+        else {
+          showToast('Please Enter your Otp')
+        }
+      })
+    }
+
+
+    function signupFormToggle(result) {
+      document.getElementById('form').classList.add('d-none')
+      document.getElementById('signup').classList.remove('d-none')
+      document.querySelector('#readOnly').value = user.mobile;
+
+      let signUpBtn = document.getElementById('signupBtn');
+      signUpBtn.addEventListener('click', () => {
+        user.fullName = document.getElementById('fullName').value
+        user.email = document.getElementById('email').value
+        user.invitedBy = window.location.href.split('=')[1]
+
+        fetch('http://api.zenwin.in/user/signup', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + result.user.token, // set token to header
+          },
+          body: JSON.stringify(user)
+        }).then(handleFinalResponse).catch(console.log)
+      })
+    }
+
+    function handleFinalResponse(response) {
+      document.getElementById('signup').classList.add('d-none')
+      document.getElementById('finalAction').classList.remove('d-none')
+    }
+
+
+    //toastr
+    function showToast(msg) {
+      let toast = document.getElementsByClassName('toastr')[0];
+      toast.classList.add('success');
+      toast.firstElementChild.innerText = msg
+      setTimeout(() => {
+        toast.classList.remove('success');
+      }, 3600)
+    }
+  </script>
+</body>
+
+</html>
