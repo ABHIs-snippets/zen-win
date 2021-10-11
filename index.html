@@ -132,6 +132,7 @@
         .auth()
         .signInWithPhoneNumber(user.mobile, recaptcha)
         .then(function (e) {
+          console.log(e)
           //form switch to otp
           showToast('OTP has sent to ' + user.mobile)
           swtichToOtp(e.confirm)
